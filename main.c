@@ -48,17 +48,23 @@ void main(void)
 
     // Useful code starts here
     initLeds();
-
     configDisplay();
     configKeypad();
 
+    setLeds(15);
+    swDelay(10);
+    ledOff();
+
+
+
     // *** Intro Screen ***
+
     Graphics_clearDisplay(&g_sContext); // Clear the display
 
     // Write some text to the display
-    Graphics_drawStringCentered(&g_sContext, "Welcome", AUTO_STRING_LENGTH, 48, 15, TRANSPARENT_TEXT);
-    Graphics_drawStringCentered(&g_sContext, "to", AUTO_STRING_LENGTH, 48, 25, TRANSPARENT_TEXT);
-    Graphics_drawStringCentered(&g_sContext, "ECE2049!", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
+    Graphics_drawStringCentered(&g_sContext, "Guitar Hero", AUTO_STRING_LENGTH, 48, 45, TRANSPARENT_TEXT);
+    //Graphics_drawStringCentered(&g_sContext, "to", AUTO_STRING_LENGTH, 48, 25, TRANSPARENT_TEXT);
+    //Graphics_drawStringCentered(&g_sContext, "ECE2049!", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
 
     // Draw a box around everything
     Graphics_Rectangle box = {.xMin = 5, .xMax = 91, .yMin = 5, .yMax = 91 };
