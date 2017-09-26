@@ -67,13 +67,13 @@ void setLeds(unsigned char state)
     P6OUT &= ~(BIT4|BIT3|BIT2|BIT1);
 
     if (state & BIT0)
-        mask |= BIT4;   // Right most LED P6.4
+        mask |= BIT4;   // Right most LED P6.4, state = 1
     if (state & BIT1)
-        mask |= BIT3;   // next most right LED P.3
+        mask |= BIT3;   // next most right LED P.3, state = 2
     if (state & BIT2)
-        mask |= BIT1;   // third most left LED P6.1
+        mask |= BIT1;   // third most left LED P6.1, state = 4
     if (state & BIT3)
-        mask |= BIT2;   // Left most LED on P6.2
+        mask |= BIT2;   // Left most LED on P6.2, state = 8
     P6OUT |= mask;
 }
 
@@ -99,6 +99,27 @@ void BuzzerOn(void)
     // Doing this with a hard coded values is NOT the best method
     // We do it here only as an example. You will fix this in Lab 2.
     TB0CCR0   = 128;                    // Set the PWM period in ACLK ticks
+    TB0CCTL0 &= ~CCIE;                  // Disable timer interrupts
+
+    // Configure CC register 5, which is connected to our PWM pin TB0.5
+    TB0CCTL5  = OUTMOD_7;                   // Set/reset mode for PWM
+    TB0CCTL5 &= ~CCIE;                      // Disable capture/compare interrupts
+    TB0CCR5   = TB0CCR0/2;                  // Configure a 50% duty cycle
+}
+
+void BuzzerOnNote(int pitch)
+{
+    // Initialize PWM output on P3.5, which corresponds to TB0.5
+    P3SEL |= BIT5; // Select peripheral output mode for P3.5
+    P3DIR |= BIT5;
+
+    TB0CTL  = (TBSSEL__ACLK|ID__1|MC__UP);  // Configure Timer B0 to use ACLK, divide by 1, up mode
+    TB0CTL  &= ~TBIE;                       // Explicitly Disable timer interrupts for safety
+
+    // Now configure the timer period, which controls the PWM period
+    // Doing this with a hard coded values is NOT the best method
+    // We do it here only as an example. You will fix this in Lab 2.
+    TB0CCR0   = 32768/pitch;                    // Set the PWM period in ACLK ticks
     TB0CCTL0 &= ~CCIE;                  // Disable timer interrupts
 
     // Configure CC register 5, which is connected to our PWM pin TB0.5
@@ -137,6 +158,40 @@ void setupSPI_DAC(void)
      UCB0CTL1 &= ~UCSWRST;
 }
 */
+
+void configButton()
+{
+    P7SEL &= ~(BIT4|BIT0);
+    P3SEL &= ~(BIT6);
+    P2SEL &= ~(BIT2);
+    P7DIR &= ~(BIT4|BIT0); //setting to input
+    P3DIR &= ~(BIT6);
+    P2DIR &= ~(BIT2);
+    P7REN |= (BIT4|BIT0); //enabling pull up/down resistors (setting them to 1)
+    P3REN |= (BIT6);
+    P2REN |= (BIT2);
+    P7OUT |= (BIT4|BIT0);
+    P3OUT |= (BIT6);
+    P2OUT |= (BIT2);
+}
+
+int readButton()
+{
+    int output = 0;
+    if (~P7IN & BIT0) {  //Button S1
+        output = 8;
+    }
+    if (~P3IN & BIT6) {  //Button S2
+        output = 4;
+    }
+    if (~P2IN & BIT2) {  //Button S3
+        output = 2;
+    }
+    if (~P7IN & BIT4) {  //Button S4
+        output = 1;
+    }
+    return output;
+}
 
 void configKeypad(void)
 {

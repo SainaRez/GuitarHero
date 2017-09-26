@@ -30,8 +30,11 @@ void main(void)
     long unsigned X= 200022;   // No prefix so number is assumed to be in decimal
     unsigned char myGrade='A';
     unsigned char initial='J';
-    //unsigned char name[14] = "Your Name Here"; // What happens when you change the array length?
-                                        // What should it be?
+    int state = 0;
+    int oldmac[60] = {587,587,587,440,494,494,440,740,740,659,659,440,587,587,587,440,494,494,
+                      440,740,740,659,659,587,440,440,587,587,587,440,440,587,587,587,587,587,
+                      587,587,587,587,587,587,587,587,587,587,587,587,587,440,494,494,440,740,
+                      740,659,659,587};
 
     unsigned int somethingFun = 0x2121;
 
@@ -50,21 +53,69 @@ void main(void)
     initLeds();
     configDisplay();
     configKeypad();
+    configButton();
 
     setLeds(15);
     swDelay(10);
     ledOff();
 
+    Graphics_Rectangle box = {.xMin = 5, .xMax = 91, .yMin = 5, .yMax = 91 };
+    Graphics_drawRectangle(&g_sContext, &box);
+    Graphics_flushBuffer(&g_sContext);
+
+    while(1) {
+        switch(state){
+        case 0:
+            Graphics_clearDisplay(&g_sContext); // Clear the display
+            Graphics_drawStringCentered(&g_sContext, "Guitar Hero", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "Press *", AUTO_STRING_LENGTH, 48, 55, TRANSPARENT_TEXT);
+            Graphics_flushBuffer(&g_sContext);
+            startGame();
+            state++;
+        case 1:
+            Graphics_clearDisplay(&g_sContext); // Clear the display
+            Graphics_drawStringCentered(&g_sContext, "3!", AUTO_STRING_LENGTH, 48, 40, TRANSPARENT_TEXT);
+            Graphics_flushBuffer(&g_sContext);
+            swDelay(1);
+            Graphics_clearDisplay(&g_sContext); // Clear the display
+            Graphics_drawStringCentered(&g_sContext, "2!", AUTO_STRING_LENGTH, 48, 40, TRANSPARENT_TEXT);
+            Graphics_flushBuffer(&g_sContext);
+            swDelay(1);
+            Graphics_clearDisplay(&g_sContext); // Clear the display
+            Graphics_drawStringCentered(&g_sContext, "1!", AUTO_STRING_LENGTH, 48, 40, TRANSPARENT_TEXT);
+            Graphics_flushBuffer(&g_sContext);
+            swDelay(1);
+            Graphics_clearDisplay(&g_sContext); // Clear the display
+            Graphics_drawStringCentered(&g_sContext, "GO!!!", AUTO_STRING_LENGTH, 48, 40, TRANSPARENT_TEXT);
+            Graphics_flushBuffer(&g_sContext);
+            swDelay(1);
+            Graphics_clearDisplay(&g_sContext); // Clear the displays
+            state++;
+         break;
+        case 2:{
+            int i;
+            for (i = 0; i < 60; i++) {
+                int note = oldmac[i];
+                BuzzerOnNote(note);
+                swDelay(1);
+                BuzzerOff();
+            }
+            state = 0;
+        }
+        }
+    }
 
 
     // *** Intro Screen ***
 
+    /*
     Graphics_clearDisplay(&g_sContext); // Clear the display
 
     // Write some text to the display
-    Graphics_drawStringCentered(&g_sContext, "Guitar Hero", AUTO_STRING_LENGTH, 48, 45, TRANSPARENT_TEXT);
-    //Graphics_drawStringCentered(&g_sContext, "to", AUTO_STRING_LENGTH, 48, 25, TRANSPARENT_TEXT);
+    Graphics_drawStringCentered(&g_sContext, "Guitar Hero", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
+    Graphics_drawStringCentered(&g_sContext, "Press *", AUTO_STRING_LENGTH, 48, 55, TRANSPARENT_TEXT);
     //Graphics_drawStringCentered(&g_sContext, "ECE2049!", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
+
 
     // Draw a box around everything
     Graphics_Rectangle box = {.xMin = 5, .xMax = 91, .yMin = 5, .yMax = 91 };
@@ -76,6 +127,45 @@ void main(void)
     // Since this is a slow operation, it is best to refresh (or "flush") only after
     // we are done drawing everything we need.
     Graphics_flushBuffer(&g_sContext);
+    swDelay(5);
+
+    while(1) {
+               int temp = readButton();
+               if (temp == 8){
+                   setLeds(8);
+               }
+               else if (temp == 4) {
+                   setLeds(4);
+               }
+               else if (temp == 2) {
+                   setLeds(2);
+               }
+               else if (temp == 1) {
+                   BuzzerOnNote(523);
+                   swDelay(2);
+                   BuzzerOff();
+                   BuzzerOnNote(587);
+                   swDelay(2);
+                   BuzzerOff();
+                   BuzzerOnNote(659);
+                   swDelay(2);
+                   BuzzerOff();
+                   BuzzerOnNote(698);
+                   swDelay(2);
+                   BuzzerOff();
+                   BuzzerOnNote(784);
+                   swDelay(2);
+                   BuzzerOff();
+                   BuzzerOnNote(880);
+                   swDelay(2);
+                   BuzzerOff();
+                   BuzzerOnNote(494);
+                   swDelay(2);
+                   BuzzerOff();
+               }
+           }
+
+    */
 
     dispThree[0] = ' ';
     dispThree[2] = ' ';
@@ -128,5 +218,15 @@ void swDelay(char numLoops)
     	i = 50000 ;					// SW Delay
    	    while (i > 0)				// could also have used while (i)
 	       i--;
+    }
+}
+
+void startGame(){
+    while(1){
+        unsigned char currKey = 0;
+        currKey = getKey();
+        if (currKey == '*'){
+            return;
+        }
     }
 }

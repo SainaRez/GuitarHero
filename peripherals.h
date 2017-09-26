@@ -74,8 +74,12 @@ void initLeds(void);
 void setLeds(unsigned char state);
 void lefOff();
 
+void configButton();
+int readButton();
+
 void configDisplay(void);
 void BuzzerOn(void);
+void BuzzerOnNote(int pitch);
 void BuzzerOff(void);
 
 void configKeypad(void);
