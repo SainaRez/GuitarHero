@@ -181,13 +181,13 @@ int readButton()
     if (~P7IN & BIT0) {  //Button S1
         output = 8;
     }
-    if (~P3IN & BIT6) {  //Button S2
+    else if (~P3IN & BIT6) {  //Button S2
         output = 4;
     }
-    if (~P2IN & BIT2) {  //Button S3
+    else if (~P2IN & BIT2) {  //Button S3
         output = 2;
     }
-    if (~P7IN & BIT4) {  //Button S4
+    else if (~P7IN & BIT4) {  //Button S4
         output = 1;
     }
     return output;

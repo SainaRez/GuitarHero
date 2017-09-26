@@ -13,6 +13,25 @@
 
 // Function Prototypes
 void swDelay(char numLoops);
+void startGame();
+void startOver();
+void A2_timer();
+
+unsigned long int timer;
+
+//period = (80.92 + 1) * (1/32768) = 0.0025 seconds
+//MAX_CNT = 80;
+void A2_timer() {
+    TA2CTL = TASSEL_1 + ID_0 + MC_1;
+    TA2CCR0 = 80;   //it means we have 80 periods of 32 Khz each
+    TA2CCTL0 = CCIE;
+}
+
+#pragma vector = TIMER2_A0_VECTOR
+
+__interrupt void A2_ISRs() {
+    timer++;
+}
 
 // Declare globals here
 
@@ -31,14 +50,22 @@ void main(void)
     unsigned char myGrade='A';
     unsigned char initial='J';
     int state = 0;
+
+    //int dQueenPitch[4] = [584,740,740,831];
+    //dQueenDuration[] = [];
+
     int oldmac[60] = {587,587,587,440,494,494,440,740,740,659,659,440,587,587,587,440,494,494,
                       440,740,740,659,659,587,440,440,587,587,587,440,440,587,587,587,587,587,
                       587,587,587,587,587,587,587,587,587,587,587,587,587,440,494,494,440,740,
-                      740,659,659,587};
+                      740,659,659,587,880};
+    int oldmaclength = 16;
+    int oldmacpitch[16] = {440,494,523,587,659,698,784,880,440,494,523,587,659,698,784,880};
+    float oldmacduration[16] = {1.0,1.0,0.5,0.5,0.2,0.2,2.0,2.0,1.0,1.0,0.5,0.5,0.2,0.2,2.0,2.0};
 
     unsigned int somethingFun = 0x2121;
 
     WDTCTL = WDTPW | WDTHOLD;       // Stop watchdog timer
+    _BIS_SR(GIE);
 
     // Some utterly useless instructions -- Step through them
     // What size does the Code Composer MSP430 Compiler use for the
@@ -54,6 +81,7 @@ void main(void)
     configDisplay();
     configKeypad();
     configButton();
+    A2_timer();
 
     setLeds(15);
     swDelay(10);
@@ -94,16 +122,69 @@ void main(void)
          break;
         case 2:{
             int i;
-            for (i = 0; i < 60; i++) {
-                int note = oldmac[i];
-                BuzzerOnNote(note);
-                swDelay(1);
+            for (i = 0; i < oldmaclength; i++) {
+                int lostLives = 0;
+                int note = oldmacpitch[i];
+                float period = oldmacduration[i]*400;
+                int ledNum = (note-200)/200;
+                if (ledNum > 4) {
+                    ledNum = 4;
+                }
+                int notePeriod = timer + period;
+                while (timer < notePeriod) {
+                    BuzzerOnNote(note);
+                    int ledState = 100;
+                    if (ledNum == 1) {
+                        ledState = 8;
+                    }
+                    else if (ledNum == 2) {
+                        ledState = 4;
+                    }
+                    else if (ledNum == 3) {
+                        ledState = 2;
+                    }
+                    else if (ledNum == 4){
+                        ledState = 1;
+                    }
+                    setLeds(ledState);
+                    if (readButton != ledState) {
+                        lostLives++;
+                    }
+                }
+                ledOff();
                 BuzzerOff();
+                unsigned long delayPeriod = timer + 30;
+                while (timer < delayPeriod){
+
+                }
+                if (lostLives > 4) {
+                   state++;
+                   break;
+                }
             }
-            state = 0;
+            state = 4;
+            break;
         }
+        case 3:
+            Graphics_clearDisplay(&g_sContext); // Clear the display
+            Graphics_drawStringCentered(&g_sContext, "WOW", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "You Suck", AUTO_STRING_LENGTH, 48, 45, TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "press #", AUTO_STRING_LENGTH, 48, 55, TRANSPARENT_TEXT);
+            Graphics_flushBuffer(&g_sContext);
+            startOver();
+            state = 0;
+            break;
+        case 4:
+            Graphics_clearDisplay(&g_sContext); // Clear the display
+            Graphics_drawStringCentered(&g_sContext, "You Won!", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
+            Graphics_drawStringCentered(&g_sContext, "press #", AUTO_STRING_LENGTH, 48, 55, TRANSPARENT_TEXT);
+            Graphics_flushBuffer(&g_sContext);
+            startOver();
+            state = 0;
+            break;
         }
     }
+}
 
 
     // *** Intro Screen ***
@@ -128,44 +209,6 @@ void main(void)
     // we are done drawing everything we need.
     Graphics_flushBuffer(&g_sContext);
     swDelay(5);
-
-    while(1) {
-               int temp = readButton();
-               if (temp == 8){
-                   setLeds(8);
-               }
-               else if (temp == 4) {
-                   setLeds(4);
-               }
-               else if (temp == 2) {
-                   setLeds(2);
-               }
-               else if (temp == 1) {
-                   BuzzerOnNote(523);
-                   swDelay(2);
-                   BuzzerOff();
-                   BuzzerOnNote(587);
-                   swDelay(2);
-                   BuzzerOff();
-                   BuzzerOnNote(659);
-                   swDelay(2);
-                   BuzzerOff();
-                   BuzzerOnNote(698);
-                   swDelay(2);
-                   BuzzerOff();
-                   BuzzerOnNote(784);
-                   swDelay(2);
-                   BuzzerOff();
-                   BuzzerOnNote(880);
-                   swDelay(2);
-                   BuzzerOff();
-                   BuzzerOnNote(494);
-                   swDelay(2);
-                   BuzzerOff();
-               }
-           }
-
-    */
 
     dispThree[0] = ' ';
     dispThree[2] = ' ';
@@ -198,7 +241,7 @@ void main(void)
 
     }  // end while (1)
 }
-
+*/
 
 void swDelay(char numLoops)
 {
@@ -230,3 +273,14 @@ void startGame(){
         }
     }
 }
+
+void startOver(){
+    while(1){
+        unsigned char currKey = 0;
+        currKey = getKey();
+        if (currKey == '#'){
+            return;
+        }
+    }
+}
+
