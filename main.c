@@ -10,12 +10,49 @@
  * You include the header associated with that file(s)
  * into the main file of your project. */
 #include "peripherals.h"
+# include <stdio.h>
+# include <math.h>
+
+#define E1 330
+#define Fsh1 370
+#define Gsh1 415
+#define A1 440
+#define Bb1 466
+#define B1 494
+#define C1 523
+#define Csh1 554
+#define D1 587
+#define Eb2 622
+#define E2 659
+#define F2 698
+#define Fsh2 740
+#define G2 784
+#define Gsh2 831
+#define A2 880
+#define Bb2 932
+#define B2 988
+#define C2 1046
+#define Csh2 1109
+#define D2 1175
+
+#define whole 3.2
+#define half 1.6
+#define quarter 0.8
+#define eighth 0.4
+#define sixteenth 0.2
+#define dHalf 2.4
+#define dQuarter 1.2
+#define dEighth 0.6
+#define dSixteenth 0.3
+#define halfEight 2.0
+
 
 // Function Prototypes
 void swDelay(char numLoops);
 void startGame();
 void startOver();
 void A2_timer();
+int ledNumber(int pitch);
 
 unsigned long int timer;
 
@@ -40,8 +77,8 @@ void main(void)
 
 {
     //unsigned char ret_val = 0x0F;
-    unsigned char currKey=0, dispSz = 3;
-    unsigned char dispThree[3];
+    //unsigned char currKey=0, dispSz = 3;
+    //unsigned char dispThree[3];
 
     // Define some local variables
     float flt = 190.68;
@@ -51,8 +88,10 @@ void main(void)
     unsigned char initial='J';
     int state = 0;
 
-    //int dQueenPitch[4] = [584,740,740,831];
-    //dQueenDuration[] = [];
+    int dQueenLength = 64;
+    char dQueenNote [64][3] = {"E","Fsh","Gsh","Gsh","A","A","Gsh","A","A","B","A","Gsh","A","A","Gsh","A","A","Gsh","A","A","B","A","B","Csh","Csh","B","A","Csh","B","B","Csh","B","B","Csh","B","B","Csh","A","B","Gsh","A","B","Gsh","A","Gsh","Fsh","Csh","B","A","Gsh","A","A","B","A","Gsh","Gsh","A","A","B","A","Gsh","Gsh","A","A"};
+    int dQueenPitch[64] = {E2,Fsh2,Gsh2,Gsh2,A2,A2,Gsh2,A2,A2,B2,A2,Gsh2,A2,A2,Gsh2,A2,A2,Gsh2,A2,A2,B2,A2,B2,Csh2,Csh2,B2,A2,Csh2,B2,B2,Csh2,B2,B2,Csh2,B2,B2,Csh2,A2,B2,Gsh2,A2,B2,Gsh2,A2,Gsh2,Fsh2,Csh2,B2,A2,Gsh2,A2,A2,B2,A2,Gsh2,Gsh2,A2,A2,B2,A2,Gsh2,Gsh2,A2,A2};
+    float dQueenDuration[64] = {dEighth,dEighth,eighth,dEighth,dEighth,halfEight,dEighth,dEighth,quarter,quarter,eighth,dEighth,dEighth,halfEight,dEighth,dEighth,halfEight,dEighth,dEighth,quarter,quarter,eighth,dEighth,dEighth,dQuarter,quarter,whole,quarter,eighth,dQuarter,quarter,eighth,halfEight,dEighth,dEighth,eighth,dEighth,dEighth,eighth,sixteenth,sixteenth,dQuarter,dEighth,dEighth,eighth,dEighth,dEighth,halfEight,dEighth,dEighth,dQuarter,sixteenth,eighth,sixteenth,dEighth,dEighth,halfEight,sixteenth,eighth,sixteenth,dEighth,dEighth,halfEight};
 
     int oldmac[60] = {587,587,587,440,494,494,440,740,740,659,659,440,587,587,587,440,494,494,
                       440,740,740,659,659,587,440,440,587,587,587,440,440,587,587,587,587,587,
@@ -84,7 +123,7 @@ void main(void)
     A2_timer();
 
     setLeds(15);
-    swDelay(10);
+    swDelay(5);
     ledOff();
 
     Graphics_Rectangle box = {.xMin = 5, .xMax = 91, .yMin = 5, .yMax = 91 };
@@ -122,11 +161,16 @@ void main(void)
          break;
         case 2:{
             int i;
-            for (i = 0; i < oldmaclength; i++) {
-                int lostLives = 0;
-                int note = oldmacpitch[i];
-                float period = oldmacduration[i]*400;
-                int ledNum = (note-200)/200;
+            int lostLives = 0;
+            for (i = 0; i < dQueenLength; i++) {
+                int flag = 0;
+                char name[3] = dQueenNote[i];
+                //Graphics_clearDisplay(&g_sContext); // Clear the display
+                //Graphics_drawStringCentered(&g_sContext, name, AUTO_STRING_LENGTH, 48, 40, TRANSPARENT_TEXT);
+                //Graphics_flushBuffer(&g_sContext);
+                int note = dQueenPitch[i];
+                float period = dQueenDuration[i]*400;
+                int ledNum = ledNumber(note);
                 if (ledNum > 4) {
                     ledNum = 4;
                 }
@@ -147,22 +191,26 @@ void main(void)
                         ledState = 1;
                     }
                     setLeds(ledState);
-                    if (readButton != ledState) {
-                        lostLives++;
+                    if (readButton() == ledState) {
+                        flag++;
                     }
+                }
+                if (flag == 0) {
+                    lostLives++;
                 }
                 ledOff();
                 BuzzerOff();
                 unsigned long delayPeriod = timer + 30;
                 while (timer < delayPeriod){
-
                 }
-                if (lostLives > 4) {
-                   state++;
+                if (lostLives > 50) {
+                   state = 3;
                    break;
                 }
+                else {
+                    state = 4;
+                }
             }
-            state = 4;
             break;
         }
         case 3:
@@ -171,6 +219,9 @@ void main(void)
             Graphics_drawStringCentered(&g_sContext, "You Suck", AUTO_STRING_LENGTH, 48, 45, TRANSPARENT_TEXT);
             Graphics_drawStringCentered(&g_sContext, "press #", AUTO_STRING_LENGTH, 48, 55, TRANSPARENT_TEXT);
             Graphics_flushBuffer(&g_sContext);
+            setLeds(15);
+            swDelay(3);
+            ledOff();
             startOver();
             state = 0;
             break;
@@ -179,6 +230,9 @@ void main(void)
             Graphics_drawStringCentered(&g_sContext, "You Won!", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
             Graphics_drawStringCentered(&g_sContext, "press #", AUTO_STRING_LENGTH, 48, 55, TRANSPARENT_TEXT);
             Graphics_flushBuffer(&g_sContext);
+            setLeds(15);
+            swDelay(3);
+            ledOff();
             startOver();
             state = 0;
             break;
@@ -186,62 +240,24 @@ void main(void)
     }
 }
 
-
-    // *** Intro Screen ***
-
-    /*
-    Graphics_clearDisplay(&g_sContext); // Clear the display
-
-    // Write some text to the display
-    Graphics_drawStringCentered(&g_sContext, "Guitar Hero", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
-    Graphics_drawStringCentered(&g_sContext, "Press *", AUTO_STRING_LENGTH, 48, 55, TRANSPARENT_TEXT);
-    //Graphics_drawStringCentered(&g_sContext, "ECE2049!", AUTO_STRING_LENGTH, 48, 35, TRANSPARENT_TEXT);
-
-
-    // Draw a box around everything
-    Graphics_Rectangle box = {.xMin = 5, .xMax = 91, .yMin = 5, .yMax = 91 };
-    Graphics_drawRectangle(&g_sContext, &box);
-
-    // We are now done writing to the display.  However, if we stopped here, we would not
-    // see any changes on the actual LCD.  This is because we need to send our changes
-    // to the LCD, which refreshes the display.
-    // Since this is a slow operation, it is best to refresh (or "flush") only after
-    // we are done drawing everything we need.
-    Graphics_flushBuffer(&g_sContext);
-    swDelay(5);
-
-    dispThree[0] = ' ';
-    dispThree[2] = ' ';
-
-    while (1)    // Forever loop
-    {
-        // Check if any keys have been pressed on the 3x4 keypad
-        currKey = getKey();
-        if ((currKey >= '0') && (currKey <= '9'))
-            setLeds(currKey - 0x30);
-        if (currKey == '*')
-            BuzzerOn();
-        if (currKey == '#')
-            BuzzerOff();
-
-        if (currKey)
-        {
-            dispThree[1] = currKey;
-            // Draw the new character to the display
-            Graphics_drawStringCentered(&g_sContext, dispThree, dispSz, 48, 55, OPAQUE_TEXT);
-
-            // Refresh the display so it shows the new data
-            Graphics_flushBuffer(&g_sContext);
-
-            // wait awhile before clearing LEDs
-            swDelay(1);
-            setLeds(0);
-        }
-
-
-    }  // end while (1)
+int ledNumber(int pitch) {
+    int led = 0;
+    if (pitch == 659 || pitch == 880) {
+        led = 1;
+    }
+    else if (pitch == 740) {
+        led = 2;
+    }
+    else if (pitch == 831) {
+        led = 3;
+    }
+    else if (pitch == 988 || pitch == 1109) {
+        led = 4;
+    }
+    return led;
 }
-*/
+
+
 
 void swDelay(char numLoops)
 {
